@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Mastery Lab — Dashboard</title>
+    <style>
+        /* ================================================================
+           CSS CUSTOM PROPERTIES (VARIABLES)
+           ================================================================
+           We define a palette of dark-theme colours and spacing values
+           as CSS custom properties on :root so every element can reference
+           them consistently.  Changing the theme later means editing only
+           this block.
+        */
+        :root {
+            --bg-primary:    #0d1117;
+            --bg-secondary:  #161b22;
+            --bg-tertiary:   #21262d;
+            --bg-card:       #1c2128;
+            --border-color:  #30363d;
+            --text-primary:  #e6edf3;
+            --text-secondary:#8b949e;
+            --accent-blue:   #58a6ff;
+            --accent-green:  #3fb950;
+            --accent-orange: #d29922;
+            --accent-red:    #f85149;
+            --accent-purple: #bc8cff;
+            --radius:        8px;
+            --transition:    0.3s ease;
+        }
+
+        /* ================================================================
+           GLOBAL RESET & BODY
+           ================================================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
+                         Arial, sans-serif, "Apple Color Emoji";
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ================================================================
+           HEADER
+           ================================================================ */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        /* ================================================================
+           MAIN GRID LAYOUT
+           ================================================================
+           CSS Grid creates a responsive 2-column layout that collapses
+           to a single column on narrow viewports.
+        */
+        main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            padding: 1.5rem 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 900px) {
+            main { grid-template-columns: 1fr; }
+        }
+
+        /* ================================================================
+           CARD (generic panel wrapper)
+           ================================================================ */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            transition: box-shadow var(--transition);
+        }
+        .card:hover {
+            box-shadow: 0 0 20px rgba(88,166,255,0.08);
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h2 .icon {
+            font-size: 1.25rem;
+        }
+
+        /* ================================================================
+           BUTTONS
+           ================================================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+        .btn:hover {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #fff;
+        }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #79bbff;
+            border-color: #79bbff;
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            color: #fff;
+        }
+        .btn-danger:hover { opacity: 0.85; }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        /* ================================================================
+           OUTPUT / PRE BLOCKS
+           ================================================================ */
+        .output {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.8rem;
+            max-height: 350px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: var(--text-secondary);
+            transition: border-color var(--transition);
+        }
+        .output.active {
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+
+        /* ================================================================
+           LOADING SPINNER
+           ================================================================ */
+        .spinner {
+            display: none;
+            width: 28px;
+            height: 28px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0.75rem auto;
+        }
+        .spinner.visible { display: block; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ================================================================
+           BAR CHART (pure CSS)
+           ================================================================ */
+        .chart-container {
+            margin-top: 1rem;
+        }
+        .bar-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            gap: 0.75rem;
+        }
+        .bar-label {
+            width: 110px;
+            font-size: 0.8rem;
+            text-align: right;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .bar-track {
+            flex: 1;
+            height: 28px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s ease;
+            display: flex;
+            align-items: center;
+            padding-left: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #fff;
+            min-width: 0;
+        }
+        .bar-fill.sequential { background: linear-gradient(90deg, var(--accent-orange), #e3a832); }
+        .bar-fill.concurrent { background: linear-gradient(90deg, var(--accent-green), #56d364); }
+
+        .speedup-badge {
+            display: inline-block;
+            background: var(--accent-green);
+            color: #000;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        /* ================================================================
+           METRICS — GAUGE & PROGRESS BARS
+           ================================================================ */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        @media (max-width: 500px) {
+            .metrics-grid { grid-template-columns: 1fr; }
+        }
+
+        .metric-box {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+        .metric-box .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+        .metric-box .value {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        /* Gauge — a semicircle gauge for goroutine count */
+        .gauge-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 0.25rem;
+        }
+        .gauge {
+            width: 80px;
+            height: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        .gauge::before {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 8px solid var(--bg-tertiary);
+            border-bottom-color: transparent;
+            border-left-color: transparent;
+            transform: rotate(-45deg);
+            position: absolute;
+            top: 0; left: 0;
+        }
+        .gauge .needle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 8px solid transparent;
+            border-top-color: var(--accent-blue);
+            border-right-color: var(--accent-blue);
+            position: absolute;
+            top: 0; left: 0;
+            transform: rotate(-45deg);
+            transition: clip-path 0.5s ease;
+        }
+
+        /* Progress bar for heap usage */
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.4rem;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: var(--accent-blue);
+            transition: width 0.5s ease;
+        }
+        .progress-fill.warn  { background: var(--accent-orange); }
+        .progress-fill.crit  { background: var(--accent-red); }
+
+        /* ================================================================
+           KV STORE FORM
+           ================================================================ */
+        .kv-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 80px;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        @media (max-width: 500px) {
+            .kv-form { grid-template-columns: 1fr; }
+        }
+
+        .kv-form input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.85rem;
+            transition: border-color var(--transition);
+        }
+        .kv-form input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        .kv-form input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* ================================================================
+           STATUS DOT (live indicator next to Metrics heading)
+           ================================================================ */
+        .live-dot {
+            width: 8px; height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.3; }
+        }
+
+        /* ================================================================
+           SCROLLBAR STYLING (Webkit)
+           ================================================================ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <header>
+        <h1>🚀 Go Mastery Lab — Interactive Benchmark Dashboard</h1>
+        <p>Explore Go internals: memory, interfaces, concurrency, and more.</p>
+    </header>
+
+    <!-- ============================================================
+         MAIN DASHBOARD GRID
+         ============================================================ -->
+    <main>
+        <!-- ========================================================
+             SECTION 1 — LESSONS PANEL
+             ========================================================
+             Each button fires a GET to /api/lesson/{name}. The
+             response text is rendered inside the <pre> output block.
+        -->
+        <div class="card">
+            <h2><span class="icon">📖</span> Lessons</h2>
+            <div class="btn-group">
+                <button class="btn" onclick="runLesson('memory')">🧠 Memory</button>
+                <button class="btn" onclick="runLesson('interfaces')">🔌 Interfaces</button>
+                <button class="btn" onclick="runLesson('concurrency')">⚡ Concurrency</button>
+            </div>
+            <div id="lessonSpinner" class="spinner"></div>
+            <pre class="output" id="lessonOutput">Click a lesson button to begin…</pre>
+        </div>
+
+        <!-- ========================================================
+             SECTION 2 — LIVE BENCHMARK
+             ========================================================
+             Hits /api/benchmark?n=100, shows a spinner while waiting,
+             then renders a side-by-side CSS bar chart comparing
+             sequential vs. concurrent durations plus the speedup.
+        -->
+        <div class="card">
+            <h2><span class="icon">⏱️</span> Live Benchmark</h2>
+            <button class="btn btn-primary" id="benchBtn" onclick="runBenchmark()">
+                ▶ Run Benchmark
+            </button>
+            <div id="benchSpinner" class="spinner"></div>
+            <div class="chart-container" id="benchChart" style="display:none;">
+                <div class="bar-row">
+                    <span class="bar-label">Sequential</span>
+                    <div class="bar-track">
+                        <div class="bar-fill sequential" id="seqBar" style="width:0%"></div>
+                    </div>
+                </div>
+                <div class="bar-row">
+                    <span class="bar-label">Concurrent</span>
+                    <div class="bar-track">
+                        <div class="bar-fill concurrent" id="concBar" style="width:0%"></div>
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <span class="speedup-badge" id="speedupBadge"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================
+             SECTION 3 — RUNTIME METRICS (auto-refresh)
+             ========================================================
+             Polls /api/metrics every 2 seconds.  Displays goroutine
+             count with a visual gauge and heap stats with animated
+             progress bars.
+        -->
+        <div class="card">
+            <h2>
+                <span class="icon">📊</span> Runtime Metrics
+                <span class="live-dot" title="Auto-refreshing every 2s"></span>
+            </h2>
+            <div class="metrics-grid">
+                <!-- Goroutines -->
+                <div class="metric-box">
+                    <div class="label">Goroutines</div>
+                    <div class="gauge-wrapper">
+                        <div class="gauge">
+                            <div class="needle" id="gaugeNeedle"></div>
+                        </div>
+                    </div>
+                    <div class="value" id="metricGoroutines">—</div>
+                </div>
+
+                <!-- NumGC -->
+                <div class="metric-box">
+                    <div class="label">GC Cycles</div>
+                    <div class="value" id="metricNumGC" style="color:var(--accent-purple);">—</div>
+                </div>
+
+                <!-- HeapAlloc -->
+                <div class="metric-box">
+                    <div class="label">Heap Alloc</div>
+                    <div class="value" id="metricHeapAlloc" style="color:var(--accent-blue);">—</div>
+                    <div class="progress-track"><div class="progress-fill" id="heapAllocBar" style="width:0%"></div></div>
+                </div>
+
+                <!-- HeapSys -->
+                <div class="metric-box">
+                    <div class="label">Heap Sys</div>
+                    <div class="value" id="metricHeapSys" style="color:var(--accent-orange);">—</div>
+                </div>
+
+                <!-- HeapInUse -->
+                <div class="metric-box" style="grid-column: span 2;">
+                    <div class="label">Heap In-Use</div>
+                    <div class="value" id="metricHeapInUse" style="color:var(--accent-green);">—</div>
+                    <div class="progress-track"><div class="progress-fill" id="heapInUseBar" style="width:0%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================
+             SECTION 4 — KV STORE PLAYGROUND
+             ========================================================
+             Simple form for GET / SET / DELETE operations against the
+             in-memory sharded KV store exposed via /api/kv/{action}.
+        -->
+        <div class="card">
+            <h2><span class="icon">🗄️</span> KV Store Playground</h2>
+            <div class="kv-form">
+                <input type="text" id="kvKey"   placeholder="Key" />
+                <input type="text" id="kvValue" placeholder="Value" />
+                <input type="number" id="kvTTL" placeholder="TTL (s)" min="0" />
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="kvAction('set')">SET</button>
+                <button class="btn"             onclick="kvAction('get')">GET</button>
+                <button class="btn btn-danger"  onclick="kvAction('delete')">DELETE</button>
+            </div>
+            <pre class="output" id="kvOutput">Results will appear here…</pre>
+        </div>
+    </main>
+
+    <!-- ============================================================
+         JAVASCRIPT — All fetch()-based interactions
+         ============================================================ -->
+    <script>
+        // ============================================================
+        // SECTION 1: Lessons
+        // ============================================================
+        // runLesson sends a GET request to the lesson endpoint and
+        // renders the captured stdout text into the output <pre> block.
+        async function runLesson(name) {
+            const out = document.getElementById('lessonOutput');
+            const spinner = document.getElementById('lessonSpinner');
+
+            out.classList.remove('active');
+            out.textContent = 'Loading ' + name + ' lesson…';
+            spinner.classList.add('visible');
+
+            try {
+                const res = await fetch('/api/lesson/' + encodeURIComponent(name));
+                const text = await res.text();
+                out.textContent = text;
+                out.classList.add('active');
+            } catch (err) {
+                out.textContent = 'Error: ' + err.message;
+            } finally {
+                spinner.classList.remove('visible');
+            }
+        }
+
+        // ============================================================
+        // SECTION 2: Benchmark
+        // ============================================================
+        // runBenchmark hits the benchmark API, then animates CSS bars
+        // proportionally so the longer duration fills 100% of the track
+        // and the shorter one is scaled relative to it.
+        async function runBenchmark() {
+            const btn     = document.getElementById('benchBtn');
+            const spinner = document.getElementById('benchSpinner');
+            const chart   = document.getElementById('benchChart');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Running…';
+            spinner.classList.add('visible');
+            chart.style.display = 'none';
+
+            try {
+                const res  = await fetch('/api/benchmark?n=100');
+                const data = await res.json();
+
+                const seqMs  = data.sequential_ms;
+                const concMs = data.concurrent_ms;
+                const maxMs  = Math.max(seqMs, concMs, 1); // avoid /0
+
+                // Compute bar widths as percentages of the maximum
+                const seqPct  = (seqMs  / maxMs * 100).toFixed(1);
+                const concPct = (concMs / maxMs * 100).toFixed(1);
+
+                const seqBar  = document.getElementById('seqBar');
+                const concBar = document.getElementById('concBar');
+                const badge   = document.getElementById('speedupBadge');
+
+                // Reset bars to 0 before animating (forces re-flow)
+                seqBar.style.width  = '0%';
+                concBar.style.width = '0%';
+                chart.style.display = 'block';
+
+                // Use requestAnimationFrame to trigger the CSS transition
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        seqBar.style.width  = seqPct + '%';
+                        concBar.style.width = concPct + '%';
+                        seqBar.textContent  = seqMs.toFixed(1) + ' ms';
+                        concBar.textContent = concMs.toFixed(1) + ' ms';
+                    });
+                });
+
+                badge.textContent = '⚡ Speedup: ' + data.speedup.toFixed(2) + 'x';
+            } catch (err) {
+                alert('Benchmark error: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '▶ Run Benchmark';
+                spinner.classList.remove('visible');
+            }
+        }
+
+        // ============================================================
+        // SECTION 3: Runtime Metrics (auto-refresh)
+        // ============================================================
+        // refreshMetrics fetches runtime stats from the server and
+        // updates the gauge, values, and progress bars.
+        async function refreshMetrics() {
+            try {
+                const res  = await fetch('/api/metrics');
+                const data = await res.json();
+
+                // — Goroutines gauge —
+                // Map goroutine count onto a 0-180° arc. We clamp at
+                // 200 goroutines for the gauge scale.
+                const gr = data.goroutines || 0;
+                document.getElementById('metricGoroutines').textContent = gr;
+                const angle = Math.min(gr / 200, 1) * 180;
+                const needle = document.getElementById('gaugeNeedle');
+                // The needle is a half-circle arc; we rotate it to show
+                // the proportion.  Base rotation is -45deg (pointing left).
+                needle.style.transform = 'rotate(' + (-45 + angle) + 'deg)';
+
+                // — Numeric values —
+                document.getElementById('metricHeapAlloc').textContent =
+                    data.heap_alloc_mb.toFixed(2) + ' MB';
+                document.getElementById('metricHeapSys').textContent =
+                    data.heap_sys_mb.toFixed(2) + ' MB';
+                document.getElementById('metricHeapInUse').textContent =
+                    data.heap_in_use_mb.toFixed(2) + ' MB';
+                document.getElementById('metricNumGC').textContent = data.num_gc;
+
+                // — Heap usage progress bars —
+                // HeapAlloc as a percentage of HeapSys
+                const allocPct = data.heap_sys_mb > 0
+                    ? (data.heap_alloc_mb / data.heap_sys_mb * 100)
+                    : 0;
+                const allocBar = document.getElementById('heapAllocBar');
+                allocBar.style.width = allocPct.toFixed(1) + '%';
+                // Colour thresholds: >80% critical, >60% warning
+                allocBar.className = 'progress-fill' +
+                    (allocPct > 80 ? ' crit' : allocPct > 60 ? ' warn' : '');
+
+                // HeapInUse as a percentage of HeapSys
+                const inUsePct = data.heap_sys_mb > 0
+                    ? (data.heap_in_use_mb / data.heap_sys_mb * 100)
+                    : 0;
+                const inUseBar = document.getElementById('heapInUseBar');
+                inUseBar.style.width = inUsePct.toFixed(1) + '%';
+                inUseBar.className = 'progress-fill' +
+                    (inUsePct > 80 ? ' crit' : inUsePct > 60 ? ' warn' : '');
+
+            } catch (_) {
+                // Silently ignore transient fetch failures
+            }
+        }
+
+        // Start the 2-second auto-refresh loop.
+        setInterval(refreshMetrics, 2000);
+        // Also fire once immediately on page load.
+        refreshMetrics();
+
+        // ============================================================
+        // SECTION 4: KV Store Playground
+        // ============================================================
+        // kvAction dispatches GET / SET / DELETE requests to the KV
+        // store API and displays the JSON response.
+        async function kvAction(action) {
+            const key   = document.getElementById('kvKey').value.trim();
+            const value = document.getElementById('kvValue').value;
+            const ttl   = parseInt(document.getElementById('kvTTL').value, 10) || 0;
+            const out   = document.getElementById('kvOutput');
+
+            if (!key) {
+                out.textContent = '⚠ Please enter a key.';
+                return;
+            }
+
+            try {
+                let res;
+
+                if (action === 'set') {
+                    // POST JSON body for SET
+                    res = await fetch('/api/kv/set', {
+                        method:  'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body:    JSON.stringify({
+                            key:         key,
+                            value:       value,
+                            ttl_seconds: ttl
+                        })
+                    });
+                } else if (action === 'get') {
+                    res = await fetch('/api/kv/get?key=' + encodeURIComponent(key));
+                } else if (action === 'delete') {
+                    res = await fetch('/api/kv/delete?key=' + encodeURIComponent(key), {
+                        method: 'DELETE'
+                    });
+                }
+
+                const data = await res.json();
+                out.textContent = JSON.stringify(data, null, 2);
+                out.classList.add('active');
+            } catch (err) {
+                out.textContent = 'Error: ' + err.message;
+            }
+        }
+    </script>
+</body>
+</html>
