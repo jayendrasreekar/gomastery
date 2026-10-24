@@ -23,65 +23,72 @@ import "fmt"
 
 // SliceMechanics demonstrates the slice header, shared backing arrays, and fixes.
 func SliceMechanics() {
-	fmt.Println("━━━ Slice Header Mechanics ━━━")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println(" 1. SLICE HEADER MECHANICS & CAPACITY")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// --- Part 1: Inspecting the Header ---
-	// make([]int, length, capacity) allocates a backing array of `capacity`
-	// elements and returns a slice header with len=length, cap=capacity.
+	fmt.Println("\n▶ Part 1: Creating a slice with length and capacity")
+	fmt.Println("  ┌──[ Code ]─────────────────────────────────────────┐")
+	fmt.Println("  │ s := make([]int, 3, 5)                            │")
+	fmt.Println("  │ s[0], s[1], s[2] = 10, 20, 30                     │")
+	fmt.Printf("%s\n", "  │ fmt.Printf(\"s = %v  len=%d  cap=%d\\n\", s, ...)    │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 	s := make([]int, 3, 5)
 	s[0], s[1], s[2] = 10, 20, 30
-	fmt.Printf("  s = %v  len=%d  cap=%d\n", s, len(s), cap(s))
-	// len(s) = 3 (we can access s[0]..s[2])
-	// cap(s) = 5 (the backing array has room for 5 elements total)
+	fmt.Printf("  👉 Output:  s = %v  len=%d  cap=%d\n", s, len(s), cap(s))
+	fmt.Println("  💡 Insight: len=3 (accessible elements: s[0]..s[2])")
+	fmt.Println("             cap=5 (backing array has room for 5 total elements)")
 
 	// --- Part 2: THE TRAP — Shared Backing Array ---
-	// When you sub-slice, the NEW slice shares the SAME backing array.
-	// Appending to the sub-slice writes into the parent's backing array!
-	fmt.Println("\n  🐛 BUG: Shared backing array corruption")
+	fmt.Println("\n▶ Part 2: THE TRAP — Sub-slicing shares the backing array")
+	fmt.Println("  ┌──[ The Buggy Code ]───────────────────────────────┐")
+	fmt.Println("  │ original := []int{1, 2, 3, 4, 5}                  │")
+	fmt.Println("  │ sub := original[1:3]     // cap(sub) = 4 !        │")
+	fmt.Println("  │ sub = append(sub, 999)   // Overwrites original!  │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 	original := []int{1, 2, 3, 4, 5}
-	sub := original[1:3] // sub = [2, 3], but cap(sub) = 4 (shares original's array)
-	fmt.Printf("  original = %v\n", original)
-	fmt.Printf("  sub      = %v  len=%d  cap=%d\n", sub, len(sub), cap(sub))
-
-	// This append does NOT allocate a new array because cap(sub) > len(sub).
-	// Instead, it overwrites original[3]!
+	sub := original[1:3]
 	sub = append(sub, 999)
-	fmt.Printf("  After append(sub, 999):\n")
-	fmt.Printf("  original = %v  ← CORRUPTED! original[3] is now 999\n", original)
-	fmt.Printf("  sub      = %v\n", sub)
+	fmt.Printf("  🐛 Result:  original = %v  ← CORRUPTED! original[3] is now 999\n", original)
+	fmt.Printf("             sub      = %v\n", sub)
+	fmt.Println("  ⚠️ Why:     Because cap(sub) was 4, append did NOT reallocate;")
+	fmt.Println("             it silently wrote into original's 4th slot!")
 
 	// --- Part 3: THE FIX — Full Slice Expression ---
-	// Use the 3-index slice expression s[low:high:max] to limit capacity.
-	// This forces append to allocate a NEW backing array.
-	fmt.Println("\n  ✅ FIX 1: Full slice expression s[low:high:max]")
+	fmt.Println("\n▶ Part 3: THE FIX — Full Slice Expression s[low:high:max]")
+	fmt.Println("  ┌──[ The Safe Code ]────────────────────────────────┐")
+	fmt.Println("  │ original2 := []int{1, 2, 3, 4, 5}                 │")
+	fmt.Println("  │ safe := original2[1:3:3]  // cap = 3 - 1 = 2      │")
+	fmt.Println("  │ safe = append(safe, 999)  // Forces new array!    │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 	original2 := []int{1, 2, 3, 4, 5}
-	safe := original2[1:3:3] // cap(safe) = 3-1 = 2, same as len
-	safe = append(safe, 999) // Must allocate new array — no room!
-	fmt.Printf("  original2 = %v  ← SAFE! unchanged\n", original2)
-	fmt.Printf("  safe      = %v\n", safe)
+	safe := original2[1:3:3]
+	safe = append(safe, 999)
+	fmt.Printf("  ✅ Result:  original2 = %v  ← SAFE! original unchanged\n", original2)
+	fmt.Printf("             safe      = %v\n", safe)
+	fmt.Println("  💡 Why:     Setting max=3 forced cap=2 (equal to len).")
+	fmt.Println("             append() had no room, so it allocated a new array!")
 
 	// --- Part 4: THE FIX — Explicit copy() ---
-	fmt.Println("\n  ✅ FIX 2: Explicit copy()")
+	fmt.Println("\n▶ Part 4: THE FIX — Explicit copy() to independent memory")
+	fmt.Println("  ┌──[ The Copy Code ]────────────────────────────────┐")
+	fmt.Println("  │ original3 := []int{1, 2, 3, 4, 5}                 │")
+	fmt.Println("  │ copied := make([]int, 2)                          │")
+	fmt.Println("  │ copy(copied, original3[1:3])                      │")
+	fmt.Println("  │ copied = append(copied, 999)                      │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 	original3 := []int{1, 2, 3, 4, 5}
 	copied := make([]int, 2)
-	copy(copied, original3[1:3]) // Copies elements, not the header
+	copy(copied, original3[1:3])
 	copied = append(copied, 999)
-	fmt.Printf("  original3 = %v  ← SAFE! unchanged\n", original3)
-	fmt.Printf("  copied    = %v\n", copied)
+	fmt.Printf("  ✅ Result:  original3 = %v  ← SAFE! original unchanged\n", original3)
+	fmt.Printf("             copied    = %v\n", copied)
 }
 
 // =============================================================================
 // LESSON: VALUE VS. POINTER SEMANTICS
 // =============================================================================
-//
-// Go is a pass-by-value language. EVERYTHING is copied when passed to a function:
-// - Structs: the entire struct is copied (shallow copy)
-// - Pointers: the pointer value (address) is copied, but it points to the same data
-//
-// Rule of thumb:
-//   - Use value receivers/parameters for small, immutable data
-//   - Use pointer receivers/parameters when you need to MODIFY the original
-//   - Use pointers for large structs to avoid expensive copies
 
 // User is a simple struct for demonstrating value vs pointer semantics.
 type User struct {
@@ -90,63 +97,55 @@ type User struct {
 }
 
 // tryModifyByValue receives a COPY of the struct. Changes are lost.
-// WHY: Go copies the entire struct into the function's stack frame.
-// The caller's original is untouched.
 func tryModifyByValue(u User) {
 	u.Age = 100 // Modifies the LOCAL copy only!
 }
 
 // modifyByPointer receives a POINTER to the original struct.
-// WHY: The pointer is copied, but it still points to the caller's data.
-// Dereferencing the pointer modifies the original.
 func modifyByPointer(u *User) {
 	u.Age = 100 // Modifies the ORIGINAL via pointer dereference
 }
 
 // ValueVsPointer demonstrates the critical difference between value and pointer semantics.
 func ValueVsPointer() {
-	fmt.Println("\n━━━ Value vs. Pointer Semantics ━━━")
+	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println(" 2. VALUE VS. POINTER SEMANTICS")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	// --- BUGGY: Passing by value ---
-	fmt.Println("\n  🐛 BUG: Passing struct by value (change is lost)")
+	fmt.Println("\n▶ Value Semantics: Structs are copied on function call")
+	fmt.Println("  ┌──[ The Buggy Code ]───────────────────────────────┐")
+	fmt.Println("  │ func tryModifyByValue(u User) { u.Age = 100 }     │")
+	fmt.Println("  │ alice := User{Name: \"Alice\", Age: 30}             │")
+	fmt.Println("  │ tryModifyByValue(alice)                           │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 	alice := User{Name: "Alice", Age: 30}
 	tryModifyByValue(alice)
-	fmt.Printf("  alice.Age = %d  ← Still 30! The function modified a copy.\n", alice.Age)
+	fmt.Printf("  🐛 Result:  alice.Age = %d  ← Still 30! Function modified a copy.\n", alice.Age)
 
 	// --- FIX: Passing by pointer ---
-	fmt.Println("\n  ✅ FIX: Passing struct by pointer (change persists)")
+	fmt.Println("\n▶ Pointer Semantics: Pointer reaches caller's original memory")
+	fmt.Println("  ┌──[ The Correct Code ]─────────────────────────────┐")
+	fmt.Println("  │ func modifyByPointer(u *User) { u.Age = 100 }     │")
+	fmt.Println("  │ bob := User{Name: \"Bob\", Age: 25}                 │")
+	fmt.Println("  │ modifyByPointer(&bob)                             │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 	bob := User{Name: "Bob", Age: 25}
-	modifyByPointer(&bob) // Pass address of bob
-	fmt.Printf("  bob.Age = %d  ← Changed to 100! Pointer reaches the original.\n", bob.Age)
-
-	// --- Value semantics are SAFE for concurrency ---
-	fmt.Println("\n  💡 Insight: Value copies are inherently safe for concurrency.")
-	fmt.Println("     Each goroutine gets its own copy — no shared mutable state.")
+	modifyByPointer(&bob)
+	fmt.Printf("  ✅ Result:  bob.Age = %d  ← Changed to 100! Pointer reached original.\n", bob.Age)
+	fmt.Println("  💡 Rule:    Use pointers when mutating state or avoiding large copies.")
+	fmt.Println("             Use values for immutable, concurrency-safe data.")
 }
 
 // =============================================================================
 // LESSON: ESCAPE ANALYSIS
 // =============================================================================
-//
-// The Go compiler decides whether a variable lives on the STACK or the HEAP.
-//   - Stack: fast, automatically freed when function returns
-//   - Heap: slower, requires garbage collection
-//
-// A variable "escapes to the heap" when the compiler can't prove it won't be
-// referenced after the function returns (e.g., returning a pointer to a local).
-//
-// Use `go build -gcflags="-m" ./...` to see escape analysis decisions.
 
-// newUserStack creates a User on the stack (does NOT escape).
-// WHY: The returned value is copied to the caller's stack frame.
 func newUserStack() User {
 	u := User{Name: "Stack", Age: 1}
 	return u // Value is COPIED out — u stays on the stack and is freed
 }
 
-// newUserHeap creates a User that ESCAPES to the heap.
-// WHY: We return a pointer to a local variable. The variable must survive
-// after this function returns, so the compiler allocates it on the heap.
 func newUserHeap() *User {
 	u := User{Name: "Heap", Age: 2}
 	return &u // u ESCAPES — compiler moves it to the heap
@@ -154,23 +153,26 @@ func newUserHeap() *User {
 
 // EscapeAnalysisDemo shows the difference between stack and heap allocation.
 func EscapeAnalysisDemo() {
-	fmt.Println("\n━━━ Escape Analysis ━━━")
+	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println(" 3. ESCAPE ANALYSIS (STACK VS. HEAP)")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("  ┌──[ Code ]─────────────────────────────────────────┐")
+	fmt.Println("  │ func newUserStack() User {                        │")
+	fmt.Println("  │     return User{Name: \"Stack\", Age: 1} // Stack    │")
+	fmt.Println("  │ }                                                 │")
+	fmt.Println("  │ func newUserHeap() *User {                        │")
+	fmt.Println("  │     u := User{Name: \"Heap\", Age: 2}               │")
+	fmt.Println("  │     return &u                          // Heap!   │")
+	fmt.Println("  │ }                                                 │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 
 	stackUser := newUserStack()
 	heapUser := newUserHeap()
 
-	fmt.Printf("  Stack user: %+v (returned by value, allocated on stack)\n", stackUser)
-	fmt.Printf("  Heap user:  %+v (returned by pointer, escaped to heap)\n", *heapUser)
-
-	fmt.Println("\n  🔬 To see escape decisions, run:")
+	fmt.Printf("  👉 Output:  Stack user = %+v (freed automatically when frame pops)\n", stackUser)
+	fmt.Printf("             Heap user  = %+v (survives via GC pointer)\n", *heapUser)
+	fmt.Println("\n  🔬 Terminal inspection command:")
 	fmt.Println("     go build -gcflags=\"-m\" ./internal/lessons/")
-	fmt.Println("  Look for 'moved to heap' and 'does not escape' annotations.")
-
-	// --- Why this matters ---
-	fmt.Println("\n  💡 Performance insight:")
-	fmt.Println("     Heap allocations add GC pressure. In hot paths, prefer")
-	fmt.Println("     returning values (not pointers) for small structs.")
-	fmt.Println("     The compiler is smart — it only escapes when necessary.")
 }
 
 // RunMemoryLesson is an alias for RunAllMemoryLessons to match the entrypoint runner.
@@ -180,9 +182,9 @@ func RunMemoryLesson() {
 
 // RunAllMemoryLessons executes all memory-related lessons in sequence.
 func RunAllMemoryLessons() {
-	fmt.Println("╔══════════════════════════════════════════════╗")
-	fmt.Println("║     📚 LESSON: Go Memory Mechanics           ║")
-	fmt.Println("╚══════════════════════════════════════════════╝")
+	fmt.Println("╔══════════════════════════════════════════════════════╗")
+	fmt.Println("║     📚 LESSON: Go Memory Mechanics & Slices          ║")
+	fmt.Println("╚══════════════════════════════════════════════════════╝")
 	SliceMechanics()
 	ValueVsPointer()
 	EscapeAnalysisDemo()

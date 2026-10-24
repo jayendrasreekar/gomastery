@@ -31,7 +31,18 @@ import (
 // BasicGoroutines demonstrates spawning goroutines, sync.WaitGroup coordination,
 // and loop variable capture mechanics.
 func BasicGoroutines() {
-	fmt.Println("━━━ Goroutines & sync.WaitGroup ━━━")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println(" 1. GOROUTINES & SYNC.WAITGROUP COORDINATION")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("  ┌──[ Code ]─────────────────────────────────────────┐")
+	fmt.Println("  │ var wg sync.WaitGroup                             │")
+	fmt.Println("  │ wg.Add(1) // MUST be called in PARENT before 'go'!│")
+	fmt.Println("  │ go func(id int) {                                 │")
+	fmt.Println("  │     defer wg.Done()                               │")
+	fmt.Println("  │     // work...                                    │")
+	fmt.Println("  │ }(i)                                              │")
+	fmt.Println("  │ wg.Wait() // Block until counter reaches 0        │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 
 	var wg sync.WaitGroup
 
@@ -91,7 +102,15 @@ func BasicGoroutines() {
 
 // ChannelMechanics demonstrates unbuffered synchronous handoffs and buffered queues.
 func ChannelMechanics() {
-	fmt.Println("\n━━━ Channel Mechanics ━━━")
+	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println(" 2. CHANNEL MECHANICS (UNBUFFERED VS. BUFFERED)")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("  ┌──[ Code ]─────────────────────────────────────────┐")
+	fmt.Println("  │ unbuf := make(chan string)   // Capacity = 0      │")
+	fmt.Println("  │ // Send blocks until receiver is ready (rendezvous│")
+	fmt.Println("  │ buf := make(chan int, 3)     // Capacity = 3      │")
+	fmt.Println("  │ // Non-blocking send until 3 items fill buffer    │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 
 	// --- 1. Unbuffered Channel (Synchronous Rendezvous) ---
 	fmt.Println("\n  1. Unbuffered channel handoff:")
@@ -190,7 +209,17 @@ func WorkerPool(numJobs, numWorkers int) []int {
 
 // WorkerPoolDemo prints a demonstration of the worker pool.
 func WorkerPoolDemo() {
-	fmt.Println("\n━━━ Worker Pool Pattern ━━━")
+	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println(" 3. WORKER POOL PATTERN (BOUNDED FAN-OUT / FAN-IN)")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("  ┌──[ Code ]─────────────────────────────────────────┐")
+	fmt.Println("  │ jobs := make(chan int, numJobs)                   │")
+	fmt.Println("  │ results := make(chan int, numJobs)                │")
+	fmt.Println("  │ for w := 1; w <= numWorkers; w++ {                │")
+	fmt.Println("  │     go worker(jobs, results) // Fan-out           │")
+	fmt.Println("  │ }                                                 │")
+	fmt.Println("  │ for res := range results { ... }     // Fan-in    │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 	jobsCount := 6
 	workersCount := 3
 	fmt.Printf("  Processing %d jobs with %d concurrent workers...\n", jobsCount, workersCount)
@@ -217,7 +246,16 @@ func WorkerPoolDemo() {
 
 // SelectMultiplexing demonstrates multiplexing between channels and handling timeouts.
 func SelectMultiplexing() {
-	fmt.Println("\n━━━ Select Multiplexing & Timeouts ━━━")
+	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println(" 4. SELECT MULTIPLEXING & TIMEOUTS")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("  ┌──[ Code ]─────────────────────────────────────────┐")
+	fmt.Println("  │ select {                                          │")
+	fmt.Println("  │ case msg := <-fastCh: ...                         │")
+	fmt.Println("  │ case <-time.After(30 * time.Millisecond):         │")
+	fmt.Println("  │     // Prevents deadlocks when channels stall!    │")
+	fmt.Println("  │ }                                                 │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 
 	fastCh := make(chan string)
 	slowCh := make(chan string)
@@ -275,7 +313,16 @@ func SelectMultiplexing() {
 
 // ContextCancellation demonstrates context-driven shutdown.
 func ContextCancellation() {
-	fmt.Println("\n━━━ Context Cancellation ━━━")
+	fmt.Println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println(" 5. CONTEXT CANCELLATION & LEAK PREVENTION")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("  ┌──[ Code ]─────────────────────────────────────────┐")
+	fmt.Println("  │ ctx, cancel := context.WithCancel(bg)             │")
+	fmt.Println("  │ select {                                          │")
+	fmt.Println("  │ case <-ctx.Done():                                │")
+	fmt.Println("  │     return // Exits cleanly on cancel!            │")
+	fmt.Println("  │ }                                                 │")
+	fmt.Println("  └───────────────────────────────────────────────────┘")
 
 	// Create a cancellable context
 	ctx, cancel := context.WithCancel(context.Background())
